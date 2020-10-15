@@ -17,7 +17,8 @@ from transforms3d.quaternions import mat2quat
 cur_dir = osp.dirname(osp.abspath(__file__))
 sys.path.insert(0, osp.join(cur_dir, "../"))
 from core.dr_utils.dib_renderer_x import DIBRenderer
-from core.dr_utils.dr_utils import load_objs, render_dib_vc_batch
+# from core.dr_utils.dr_utils import load_objs, render_dib_vc_batch
+from core.dr_utils.dr_utils import render_dib_vc_batch
 
 
 output_directory = osp.join(cur_dir, "../output/results")
@@ -87,28 +88,81 @@ def grid_show(ims, titles=None, row=1, col=3, dpi=200, save_path=None, title_fon
     return fig
 
 
+def loadobjtex(meshfile):
+    v = []
+    vt = []
+    f = []
+    ft = []
+    meshfp = open(meshfile, 'r')
+    for line in meshfp.readlines():
+        data = line.strip().split(' ')
+        data = [da for da in data if len(da) > 0]
+        if len(data) != 4 and len(data) != 7 and len(data) != 3:
+            continue
+        if data[0] == 'v':
+            v.append([float(d) for d in data[1:4]])
+        if data[0] == 'vt':
+            vt.append([float(d) for d in data[1:3]])
+        if data[0] == 'f':
+            data = [da.split('/') for da in data]
+            f.append([int(d[0]) for d in data[1:]])
+            ft.append([int(d[1]) for d in data[1:]])
+    meshfp.close()
+
+    # torch need int64
+    facenp_fx3 = np.array(f, dtype=np.int64) - 1
+    ftnp_fx3 = np.array(ft, dtype=np.int64) - 1
+    pointnp_px3 = np.array(v, dtype=np.float32)
+    uvs = np.array(vt, dtype=np.float32)[:, :2]
+    uvs_downsample = np.zeros((len(pointnp_px3), 2))
+    for i in range(len(pointnp_px3)):
+        uvs_downsample[i] = uvs[ftnp_fx3[np.where(facenp_fx3 == i)[0][0],
+                                         np.where(facenp_fx3 == i)[1][0]]]
+    return pointnp_px3, facenp_fx3, uvs_downsample
+
+
 def main():
+    # objs = [
+    #     "ape",
+    #     "benchvise",
+    #     # "bowl",
+    #     "camera",
+    #     "can",
+    #     "cat",
+    #     # "cup",
+    #     "driller",
+    #     "duck",
+    #     "eggbox",
+    #     "glue",
+    #     "holepuncher",
+    #     "iron",
+    #     "lamp",
+    #     "phone",
+    # ]
     objs = [
         "ape",
-        "benchvise",
-        # "bowl",
-        "camera",
-        "can",
-        "cat",
-        # "cup",
-        "driller",
-        "duck",
-        "eggbox",
-        "glue",
-        "holepuncher",
-        "iron",
-        "lamp",
-        "phone",
     ]
+
+
     obj_paths = [osp.join(model_root, "{}/textured.obj".format(cls_name)) for cls_name in objs]
     texture_paths = [osp.join(model_root, "{}/texture_map.png".format(cls_name)) for cls_name in objs]
 
-    models = load_objs(obj_paths, texture_paths, height=HEIGHT, width=WIDTH)
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    # models = load_objs(obj_paths, texture_paths, height=HEIGHT, width=WIDTH)
+    pointnp_px3, facenp_fx3, uv = loadobjtex(obj_paths[0])
+    vertices = torch.from_numpy(pointnp_px3).to(device)
+    vertices = vertices.unsqueeze(0)
+    faces = torch.from_numpy(facenp_fx3).to(device)
+    faces = faces.unsqueeze(0)
+    vert_min = torch.min(vertices)
+    vert_max = torch.max(vertices)
+    colors = (vertices - vert_min) / (vert_max - vert_min)
+    model = {}
+    model['colors'] = colors
+    model['faces'] = faces
+    model['vertices'] = vertices
+    models = [model]
+    
     ren = DIBRenderer(HEIGHT, WIDTH, mode="VertexColorBatch")
 
     # pose =============================================

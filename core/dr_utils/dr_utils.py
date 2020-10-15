@@ -6,7 +6,7 @@ import os.path as osp
 from tqdm import tqdm
 # from kaolin.rep import TriangleMesh
 # from kaolin.graphics import DIBRenderer
-from .rep import TriangleMesh
+# from .rep import TriangleMesh
 from .dib_renderer_x import DIBRenderer
 from core.utils.pose_utils import quat2mat_torch
 

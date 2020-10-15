@@ -11,14 +11,17 @@ We mainly extend the implementation of DIB-Renderer from [kaolin](https://github
 - perspective projection with real camera intrinsics
 - rendering depth maps
 
+10/15/2020 taku modify it
 ## Requirements
 1. Ubuntu >= 16.04, CUDA >= 10.0, Python >= 3.6, PyTorch >=1.3
-2. kaolin
-    ```
-    git clone https://github.com/NVIDIAGameWorks/kaolin.git
-    cd kaolin
-    python setup.py develop
-    ```
+2. python3 -m virtualenv -p python3 --system-site-packages dib_env
+3. source dib_env/bin/activate
+4. please follow this setup
+   ```
+   https://github.com/takuya-ikeda-tri/DIB-R/tree/add_render_example  
+   ```
+5. pip3 install -r requestments.txt
+```
 
 ## Usage
 We provide an example for rendering LINEMOD objects, just run

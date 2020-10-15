@@ -22,7 +22,7 @@ from __future__ import print_function
 from __future__ import division
 
 from core.utils.pose_utils import quat2mat_torch
-from kaolin.mathutils.geometry.transformations import compute_camera_params
+# from kaolin.mathutils.geometry.transformations import compute_camera_params
 from ..utils import perspectiveprojectionnp, projectiveprojection_real
 from .phongrender import PhongRender
 from .shrender import SHRender
@@ -48,6 +48,30 @@ renderers = {
     'SphericalHarmonics': SHRender,
     'Phong': PhongRender
 }
+
+
+def compute_camera_params(azimuth: float, elevation: float, distance: float):
+
+    theta = np.deg2rad(azimuth)
+    phi = np.deg2rad(elevation)
+
+    camY = distance * np.sin(phi)
+    temp = distance * np.cos(phi)
+    camX = temp * np.cos(theta)
+    camZ = temp * np.sin(theta)
+    cam_pos = np.array([camX, camY, camZ])
+
+    axisZ = cam_pos.copy()
+    axisY = np.array([0, 1, 0])
+    axisX = np.cross(axisY, axisZ)
+    axisY = np.cross(axisZ, axisX)
+
+    cam_mat = np.array([axisX, axisY, axisZ])
+    l2 = np.atleast_1d(np.linalg.norm(cam_mat, 2, 1))
+    l2[l2 == 0] = 1
+    cam_mat = cam_mat / np.expand_dims(l2, 1)
+
+    return torch.FloatTensor(cam_mat), torch.FloatTensor(cam_pos)
 
 
 class Renderer(nn.Module):
