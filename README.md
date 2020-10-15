@@ -21,7 +21,7 @@ We mainly extend the implementation of DIB-Renderer from [kaolin](https://github
    https://github.com/takuya-ikeda-tri/DIB-R/tree/add_render_example  
    ```
 5. pip3 install -r requestments.txt
-```
+
 
 ## Usage
 We provide an example for rendering LINEMOD objects, just run
